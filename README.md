@@ -3,11 +3,17 @@
 
 # Question 1 (Naked Twins)
 Q: How do we use constraint propagation to solve the naked twins problem?  
-A: *Student should provide answer here*
+A: We prune the search space by checking for naked twins in all units 
+   including the diagonal units. This results in progressive propagation of 
+   the naked twins constraint through the search space.
 
 # Question 2 (Diagonal Sudoku)
 Q: How do we use constraint propagation to solve the diagonal sudoku problem?  
-A: *Student should provide answer here*
+A: We establish the constraint that the diagonal units must not have 
+   repeating values. This is done by adding the two diagonal units to the unit
+   list. Then as we do the search, we apply this constraint during
+   the reduction phase. Thus we propagate the constraint through the search
+   space.
 
 ### Install
 
