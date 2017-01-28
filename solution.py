@@ -10,6 +10,22 @@ def assign_value(values, box, value):
         assignments.append(values.copy())
     return values
 
+def cross(A, B):
+    "Cross product of elements in A and elements in B."
+    return [s+t for s in A for t in B]
+
+rows = 'ABCDEFGHI'
+cols = '123456789'
+boxes = cross(rows, cols)
+row_units = [cross(r, cols) for r in rows]
+column_units = [cross(rows, c) for c in cols]
+square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
+# Construct the two diagonal units in the 9x9 sudoku
+diagonal_units = [[s+t for s,t in zip(rows,cols)], [s+t for s,t in zip(rows,cols[::-1])]]
+unitlist = row_units + column_units + square_units + diagonal_units
+units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
+peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
+
 def naked_twins(values):
     """Eliminate values using the naked twins strategy.
     Args:
@@ -21,22 +37,20 @@ def naked_twins(values):
 
     # Find all instances of naked twins
     # Eliminate the naked twins as possibilities for their peers
+    # - Go through each unit
+    # - In each unit check if there are two 2-character values that are identical
+    # - If so, eliminate them
+
+    for unit in unitlist:
+        for box in unit:
+            if len(values[box]) == 2:
+                for other_box in [value for value in unit if value != box]:
+                    if values[box] == values[other_box]:
+                        for peer in [value for value in unit if value != box and value != other_box]:
+                            values = assign_value(values, peer, values[peer].translate(dict.fromkeys(map(ord, values[box]), None)))
+
     return values
 
-def cross(A, B):
-    "Cross product of elements in A and elements in B."
-    return [s+t for s in A for t in B]
-
-rows = 'ABCDEFGHI'
-cols = '123456789'
-boxes = cross(rows, cols)
-row_units = [cross(r, cols) for r in rows]
-column_units = [cross(rows, c) for c in cols]
-square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-diagonal_units = [[s+t for s,t in zip(rows,cols)], [s+t for s,t in zip(rows,cols[::-1])]]
-unitlist = row_units + column_units + square_units + diagonal_units
-units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
-peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
 
 def grid_values(grid):
@@ -84,7 +98,7 @@ def eliminate(values):
     for box in solved_values:
         digit = values[box]
         for peer in peers[box]:
-            values[peer] = values[peer].replace(digit,'')
+            values = assign_value(values, peer, values[peer].replace(digit,''))
     return values
 
 def only_choice(values):
@@ -97,7 +111,7 @@ def only_choice(values):
         for digit in '123456789':
             dplaces = [box for box in unit if digit in values[box]]
             if len(dplaces) == 1:
-                values[dplaces[0]] = digit
+                values = assign_value(values, dplaces[0], digit)
     return values
 
 def reduce_puzzle(values):
@@ -157,10 +171,7 @@ def solve(grid):
     Returns:
         The dictionary representation of the final sudoku grid. False if no solution exists.
     """
-    print("Solving ", grid)
-    grid = search(grid_values(grid))
-    display(grid)
-    return grid
+    return search(grid_values(grid))
 
 if __name__ == '__main__':
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
